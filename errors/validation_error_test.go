@@ -32,9 +32,7 @@ func TestValidationError_GRPCStatus(t *testing.T) {
 	}
 	validationErr := NewValidationError(violations)
 
-	st, err := validationErr.GRPCStatus()
-
-	assert.NoError(t, err)
+	st := validationErr.GRPCStatus()
 	assert.Equal(t, codes.InvalidArgument, st.Code())
 	assert.Equal(t, "invalid request", st.Message())
 
@@ -79,9 +77,8 @@ func TestBuildViolations(t *testing.T) {
 func TestValidationError_GRPCStatus_NoViolations(t *testing.T) {
 	validationErr := NewValidationError(nil)
 
-	st, err := validationErr.GRPCStatus()
+	st := validationErr.GRPCStatus()
 
-	assert.NoError(t, err)
 	assert.Equal(t, codes.InvalidArgument, st.Code())
 	assert.Equal(t, "invalid request", st.Message())
 
