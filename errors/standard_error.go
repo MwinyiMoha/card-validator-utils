@@ -6,7 +6,6 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/runtime/protoiface"
 )
 
 type ErrorCode int
@@ -45,7 +44,8 @@ func (e *Error) Code() ErrorCode {
 }
 
 func (e *Error) GRPCStatus() *status.Status {
-	st := status.New(mapErrorCodeToGRPCCode(e.ErrCode), e.Message)
+	errCode := mapErrorCodeToGRPCCode(e.ErrCode)
+	st := status.New(errCode, e.Message)
 
 	if e.Original != nil {
 		details := &errdetails.ErrorInfo{
@@ -53,7 +53,12 @@ func (e *Error) GRPCStatus() *status.Status {
 			Metadata: map[string]string{"custom_code": fmt.Sprintf("%d", e.ErrCode)},
 		}
 
-		return grpcStatusWithDetails(st, details)
+		detailed, err := st.WithDetails(details)
+		if err != nil {
+			return st
+		}
+
+		return detailed
 	}
 
 	return st
@@ -98,14 +103,4 @@ func mapErrorCodeToGRPCCode(code ErrorCode) codes.Code {
 	default:
 		return codes.Unknown
 	}
-}
-
-func grpcStatusWithDetails(st *status.Status, details ...protoiface.MessageV1) *status.Status {
-	for _, detail := range details {
-		st, err := st.WithDetails(detail)
-		if err != nil {
-			return st
-		}
-	}
-	return st
 }

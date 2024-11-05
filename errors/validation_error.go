@@ -27,7 +27,7 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("validation error(s): %v", violationMessages)
 }
 
-func (e *ValidationError) GRPCStatus() (*status.Status, error) {
+func (e *ValidationError) GRPCStatus() *status.Status {
 	st := status.New(codes.InvalidArgument, "invalid request")
 
 	violations := []*errdetails.BadRequest_FieldViolation{}
@@ -41,11 +41,12 @@ func (e *ValidationError) GRPCStatus() (*status.Status, error) {
 		)
 	}
 
-	return st.WithDetails(
-		&errdetails.BadRequest{
-			FieldViolations: violations,
-		},
-	)
+	detailed, err := st.WithDetails(&errdetails.BadRequest{FieldViolations: violations})
+	if err != nil {
+		return st
+	}
+
+	return detailed
 }
 
 func NewValidationError(violations []*FieldViolation) *ValidationError {
